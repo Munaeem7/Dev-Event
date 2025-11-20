@@ -1,58 +1,76 @@
-import { Schema, model, models, type Document, type Model, type Types } from 'mongoose';
-import { Event } from './event.model';
+import { Schema, model, models, Document, Types } from 'mongoose';
+import Event from './event.model';
 
-// Booking domain shape used across the app
-export interface Booking {
+// TypeScript interface for Booking document
+export interface IBooking extends Document {
   eventId: Types.ObjectId;
   email: string;
   createdAt: Date;
   updatedAt: Date;
 }
 
-// Mongoose Booking document type
-export interface BookingDocument extends Booking, Document {}
-
-// Simple, production-friendly email regex
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-const BookingSchema = new Schema<BookingDocument>(
+const BookingSchema = new Schema<IBooking>(
   {
-    eventId: { type: Schema.Types.ObjectId, ref: 'Event', required: true },
-    email: { type: String, required: true, trim: true, lowercase: true },
+    eventId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Event',
+      required: [true, 'Event ID is required'],
+    },
+    email: {
+      type: String,
+      required: [true, 'Email is required'],
+      trim: true,
+      lowercase: true,
+      validate: {
+        validator: function (email: string) {
+          // RFC 5322 compliant email validation regex
+          const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+          return emailRegex.test(email);
+        },
+        message: 'Please provide a valid email address',
+      },
+    },
   },
   {
-    timestamps: true, // Automatically manages createdAt and updatedAt
+    timestamps: true, // Auto-generate createdAt and updatedAt
   }
 );
 
-// Index on eventId for faster queries by event
-BookingSchema.index({ eventId: 1 });
+// Pre-save hook to validate events exists before creating booking
+BookingSchema.pre('save', async function (next) {
+  const booking = this as IBooking;
 
-// Validate email format and ensure referenced Event exists before saving
-BookingSchema.pre<BookingDocument>('save', async function preSave(next) {
-  // Email format validation in pre-save for consistent enforcement
-  if (typeof this.email !== 'string' || this.email.trim().length === 0) {
-    return next(new Error('Email is required and cannot be empty.'));
-  }
+  // Only validate eventId if it's new or modified
+  if (booking.isModified('eventId') || booking.isNew) {
+    try {
+      const eventExists = await Event.findById(booking.eventId).select('_id');
 
-  if (!emailRegex.test(this.email)) {
-    return next(new Error('Email format is invalid.'));
-  }
-
-  try {
-    const eventExists = await Event.exists({ _id: this.eventId });
-    if (!eventExists) {
-      return next(new Error('Referenced event does not exist.'));
+      if (!eventExists) {
+        const error = new Error(`Event with ID ${booking.eventId} does not exist`);
+        error.name = 'ValidationError';
+        return next(error);
+      }
+    } catch {
+      const validationError = new Error('Invalid events ID format or database error');
+      validationError.name = 'ValidationError';
+      return next(validationError);
     }
-
-    return next();
-  } catch (error) {
-    if (error instanceof Error) {
-      return next(error);
-    }
-    return next(new Error('Booking validation failed'));
   }
+
+  next();
 });
 
-export const Booking: Model<BookingDocument> =
-  (models.Booking as Model<BookingDocument> | undefined) || model<BookingDocument>('Booking', BookingSchema);
+// Create index on eventId for faster queries
+BookingSchema.index({ eventId: 1 });
+
+// Create compound index for common queries (events bookings by date)
+BookingSchema.index({ eventId: 1, createdAt: -1 });
+
+// Create index on email for user booking lookups
+BookingSchema.index({ email: 1 });
+
+// Enforce one booking per events per email
+BookingSchema.index({ eventId: 1, email: 1 }, { unique: true, name: 'uniq_event_email' });
+const Booking = models.Booking || model<IBooking>('Booking', BookingSchema);
+
+export default Booking;

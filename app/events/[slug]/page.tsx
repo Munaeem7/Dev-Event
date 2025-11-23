@@ -3,6 +3,10 @@ import React from "react";
 import Image from "next/image";
 import { json } from "stream/consumers";
 import BookEvent from "@/components/BookEvent";
+import { IEvent } from "@/database/event.model";
+import { getSimilarEventsBySlug } from "@/lib/actions/event.actions";
+import EventCard from "@/app/components/EventCard";
+import { Silkscreen } from "next/font/google";
 
 const base_url = process.env.NEXT_PUBLIC_BASE_URL;
 
@@ -68,6 +72,9 @@ const EventPage = async ({ params }: { params: Promise<{ slug: string }> }) => {
 
   const bookings = 10;
 
+  const similarEvents : IEvent[] = await getSimilarEventsBySlug(slug);
+  console.log(similarEvents)
+
   return (
     <section id="event">
       <div className="header">
@@ -118,6 +125,15 @@ const EventPage = async ({ params }: { params: Promise<{ slug: string }> }) => {
                 <BookEvent/>
           </div>
         </aside>
+      </div>
+
+      <div className="flex w-full flex-col gap-4  pt-20">
+                <h2>Similar Events : </h2>
+                <div className="events">
+                    {similarEvents.length > 0 && similarEvents.map((similarEvent : IEvent) => (
+                        <EventCard key={similarEvent.title}  {...similarEvent} />
+                    ))}
+                </div>
       </div>
     </section>
   );

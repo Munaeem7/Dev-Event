@@ -1,12 +1,10 @@
-import { notFound } from "next/navigation";
-import React from "react";
+import { notFound } from "next/navigation";const similarEvents : IEvent[] = await getSimilarEventsBySlug(slug);import React from "react";
 import Image from "next/image";
 import { json } from "stream/consumers";
 import BookEvent from "@/components/BookEvent";
 import { IEvent } from "@/database/event.model";
 import { getSimilarEventsBySlug } from "@/lib/actions/event.actions";
 import EventCard from "@/app/components/EventCard";
-import { Silkscreen } from "next/font/google";
 
 const base_url = process.env.NEXT_PUBLIC_BASE_URL;
 
@@ -109,8 +107,7 @@ const EventPage = async ({ params }: { params: Promise<{ slug: string }> }) => {
                     </section>
 
                     <EventTags tags={tags} />
-                </div>
-
+<EventCard key={similarEvent._id || similarEvent.slug}  {...similarEvent} />
         {/* right - booking form */}
 
         <aside className="booking">

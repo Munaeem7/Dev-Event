@@ -25,9 +25,13 @@ export async function POST(req : NextRequest){
             return NextResponse.json({message : 'Image file is required'}  , {status:400});
 
 
-        let tags = JSON.parse(formData.get('tags') as string);
-        let agenda = JSON.parse(formData.get('agenda') as string);
-
+        let tags, agenda;
+        try {
+            tags = JSON.parse(formData.get('tags') as string || '[]');
+            agenda = JSON.parse(formData.get('agenda') as string || '[]');
+        } catch (e) {
+            return NextResponse.json({message: 'Invalid tags or agenda format'}, {status: 400});
+        }
         const arrayBuffer = await file.arrayBuffer()
         const buffer = Buffer.from(arrayBuffer);
         const uploadResult = await new Promise((resolve , reject) => {

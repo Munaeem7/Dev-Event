@@ -1,10 +1,11 @@
-import { notFound } from "next/navigation";const similarEvents : IEvent[] = await getSimilarEventsBySlug(slug);import React from "react";
+import { notFound } from "next/navigation";
 import Image from "next/image";
 import { json } from "stream/consumers";
 import BookEvent from "@/components/BookEvent";
 import { IEvent } from "@/database/event.model";
 import { getSimilarEventsBySlug } from "@/lib/actions/event.actions";
 import EventCard from "@/app/components/EventCard";
+import { Engagement } from "next/font/google";
 
 const base_url = process.env.NEXT_PUBLIC_BASE_URL;
 
@@ -71,7 +72,6 @@ const EventPage = async ({ params }: { params: Promise<{ slug: string }> }) => {
   const bookings = 10;
 
   const similarEvents : IEvent[] = await getSimilarEventsBySlug(slug);
-  console.log(similarEvents)
 
   return (
     <section id="event">
@@ -119,7 +119,7 @@ const EventPage = async ({ params }: { params: Promise<{ slug: string }> }) => {
                     <p className="text-sm">Be the First to Book your spot</p>
                 )}
 
-                <BookEvent/>
+                <BookEvent eventId= {event.id} slug={event.slug}                />
           </div>
         </aside>
       </div>

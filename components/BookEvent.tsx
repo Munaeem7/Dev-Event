@@ -29,20 +29,19 @@ const BookEvent = ({
     try {
       const { success, error } = await createBooking({ eventId, slug, email });
 
-      // if (success) {
-      //   setSubmitted(true);
-      //   posthog.capture('event-booked', { eventId, slug, email });
-      // } else {
-      //   console.error("Booking creation failed", error);
-      //   setError("Failed to book event. Please try again.");
-      // }
+      if (success) {
+        setSubmitted(true);
+        // posthog.capture('event-booked', { eventId, slug, email });
+      } else {
+        console.error("Booking creation failed", error);
+        setError(error || "Failed to book event. Please try again.");
+      }
     } catch (err) {
       console.error("Unexpected error:", err);
       setError("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
-    }
-  };
+    }  };
 
   return (
     <div id="book-event">

@@ -12,7 +12,14 @@ const page = async() => {
   // 'use cache';
   // cacheLife('hours');
 
-  const response = await fetch (`${BASE_URL}/api/events`);
+  const response = await fetch (`${BASE_URL}/api/events`, {
+    next: { revalidate: 60 }
+  });
+  
+  if (!response.ok) {
+    throw new Error('Failed to fetch events');
+  }
+  
   const {events} = await response.json();
 
   return (
